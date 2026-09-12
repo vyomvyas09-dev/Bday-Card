@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Happy Birthday</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@500;700&family=Poppins:wght@400;600;700&display=swap');
+
+  :root{
+    --pink: #f7c9d6;
+    --pink-light: #fdeef2;
+    --red: #a30f17;
+    --red-dark: #7d0b12;
+    --cream: #f1ead9;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family: 'Poppins', sans-serif;
+    overflow:hidden;
+    background: var(--pink-light);
+  }
+
+  #app{
+    position:relative;
+    width:100%; height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 8% 92%, rgba(240,180,190,0.6) 0%, rgba(240,180,190,0) 45%),
+      radial-gradient(circle at 92% 8%, rgba(255,120,140,0.25) 0%, rgba(255,120,140,0) 40%),
+      var(--pink-light);
+  }
+
+  /* polka dot background layer */
+  .dots{
+    position:absolute; inset:0;
+    background-image: radial-gradient(var(--pink) 2.5px, transparent 2.6px);
+    background-size: 30px 30px;
+    opacity:0.55;
+  }
+
+  .scene{
+    position:absolute; inset:0;
+    display:none;
+    align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .scene.active{ display:flex; }
+
+  /* ---------- ENVELOPE SCENE ---------- */
+  #scene-envelope .hint{
+    position:absolute; top:6%; left:50%; transform:translateX(-50%);
+    font-family:'Dancing Script', cursive;
+    font-size:28px; color: var(--red-dark);
+    text-align:center;
+    animation: float 2.4s ease-in-out infinite;
+  }
+  @keyframes float{ 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-8px);} }
+
+  .envelope-wrap{
+    position:relative;
+    width:320px; height:220px;
+    perspective: 1200px;
+  }
+
+  .envelope-body{
+    position:absolute; inset:0;
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+    border-radius:6px;
+    box-shadow: 0 20px 40px rgba(120,10,20,0.35);
+    overflow:hidden;
+  }
+  .envelope-body::before, .envelope-body::after{
+    content:"";
+    position:absolute;
+    width:0; height:0;
+  }
+  /* diagonal crease lines like a real envelope */
+  .crease{
+    position:absolute; inset:0;
+    background:
+      linear-gradient(to bottom right, transparent 49.3%, rgba(255,255,255,0.18) 49.7%, rgba(255,255,255,0.18) 50.3%, transparent 50.7%),
+      linear-gradient(to bottom left, transparent 49.3%, rgba(255,255,255,0.18) 49.7%, rgba(255,255,255,0.18) 50.3%, transparent 50.7%);
+  }
+
+  .letter-inner{
+    position:absolute;
+    left:50%; bottom:14px;
+    transform: translateX(-50%) translateY(0);
+    width:260px; height:170px;
+    background: #fbfaf6;
+    border-radius:4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    z-index:2;
+    transition: transform 1s cubic-bezier(.2,.9,.3,1.1);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:10px;
+    text-align:center;
+  }
+  .letter-inner span{
+    font-family:'Dancing Script', cursive;
+    color:#999;
+    font-size:15px;
+  }
+
+  .flap{
+    position:absolute;
+    top:0; left:0; width:100%; height:50%;
+    background: linear-gradient(135deg, var(--red-dark), var(--red));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform-origin: top center;
+    transform-style: preserve-3d;
+    transition: transform 0.9s cubic-bezier(.4,0,.2,1);
+    z-index:3;
+  }
+  .envelope-wrap.open .flap{
+    transform: rotateX(180deg);
+    z-index:1;
+  }
+  .envelope-wrap.open .letter-inner{
+    transform: translateX(-50%) translateY(-120px);
+  }
+
+  .heart-clasp{
+    position:absolute;
+    top: 46%; left:50%;
+    transform: translate(-50%,-50%);
+    width:70px; height:60px;
+    z-index:4;
+    cursor:pointer;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+    transition: transform 0.25s ease;
+  }
+  .heart-clasp:hover{ transform: translate(-50%,-50%) scale(1.08); }
+  .envelope-wrap.open .heart-clasp{
+    opacity:0;
+    transform: translate(-50%,-50%) scale(0.5);
+    pointer-events:none;
+  }
+  .heart-clasp svg{ width:100%; height:100%; }
+
+  .tap-msg{
+    margin-top:26px;
+    font-size:14px;
+    color:#8a4a52;
+    opacity:0.8;
+    letter-spacing:0.5px;
+  }
+
+  /* ---------- LETTER READING SCENE ---------- */
+  #scene-letter{
+    padding: 30px;
+  }
+  .letter-paper{
+    background: #fffdf9;
+    width: min(520px, 88vw);
+    max-height: 82vh;
+    overflow-y:auto;
+    border-radius: 10px;
+    box-shadow: 0 25px 60px rgba(120,20,30,0.25);
+    padding: 40px 34px;
+    text-align:center;
+    position:relative;
+    animation: pop-in 0.6s cubic-bezier(.2,.9,.3,1.1);
+  }
+  @keyframes pop-in{ from{opacity:0; transform:scale(0.85) translateY(30px);} to{opacity:1; transform:scale(1) translateY(0);} }
+
+  .letter-paper h1{
+    font-family:'Great Vibes', cursive;
+    font-size: 40px;
+    color: var(--red-dark);
+    margin: 0 0 18px 0;
+  }
+  .letter-paper p{
+    font-family:'Dancing Script', cursive;
+    font-size: 20px;
+    line-height: 1.55;
+    color:#3a2a2c;
+    white-space: pre-line;
+  }
+
+  .btn{
+    margin-top: 22px;
+    padding: 12px 26px;
+    border:none;
+    border-radius: 30px;
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    color:white;
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    box-shadow: 0 8px 18px rgba(163,15,23,0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 12px 22px rgba(163,15,23,0.4); }
+  .btn:active{ transform: translateY(0px) scale(0.98); }
+
+  /* ---------- CAKE SCENE ---------- */
+  #scene-cake h1{
+    font-family:'Great Vibes', cursive;
+    font-size: 42px;
+    color: var(--red-dark);
+    margin: 0 0 4px 0;
+    text-align:center;
+  }
+  #scene-cake .sub{
+    font-family:'Poppins';
+    font-size:14px;
+    color:#8a4a52;
+    margin-bottom: 10px;
+    text-align:center;
+    min-height: 18px;
+  }
+
+  .cake-scene-inner{
+    display:flex; flex-direction:column; align-items:center;
+    z-index:2;
+  }
+
+  .cake-wrap{ position:relative; width: 300px; }
+
+  .candle{
+    position:absolute;
+    bottom: 100%;
+    width: 10px;
+    transform: translateX(-50%);
+  }
+  .candle .stick{
+    width:10px; height:46px;
+    background: repeating-linear-gradient(180deg, #f3f0e9 0 6px, #e79aa8 6px 12px);
+    border-radius: 3px;
+    margin: 0 auto;
+  }
+  .flame-wrap{
+    position:absolute; top:-26px; left:50%; transform:translateX(-50%);
+    width:16px; height:26px;
+  }
+  .flame{
+    width:14px; height:22px;
+    background: radial-gradient(circle at 50% 70%, #fff6c8 0%, #ffce4a 40%, #ff8a2b 75%, #e2531b 100%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    margin: 0 auto;
+    transform-origin: bottom center;
+    animation: flicker 0.35s ease-in-out infinite alternate;
+    box-shadow: 0 0 12px 3px rgba(255,180,60,0.55);
+  }
+  @keyframes flicker{
+    0%{ transform: rotate(-4deg) scaleY(1); }
+    100%{ transform: rotate(4deg) scaleY(1.08); }
+  }
+  .candle.out .flame{ display:none; }
+  .smoke{
+    position:absolute; top:-30px; left:50%; transform:translateX(-50%);
+    width:6px; height:6px;
+    background: rgba(160,160,160,0.6);
+    border-radius:50%;
+    opacity:0;
+    pointer-events:none;
+  }
+  .candle.out .smoke{
+    animation: smoke-rise 1.4s ease-out forwards;
+  }
+  @keyframes smoke-rise{
+    0%{ opacity:0.7; transform: translateX(-50%) translateY(0) scale(1); }
+    100%{ opacity:0; transform: translateX(-50%) translateY(-40px) scale(2.4); }
+  }
+
+  .cake-svg{ display:block; width:100%; height:auto; filter: drop-shadow(0 14px 18px rgba(120,60,20,0.25)); }
+
+  .mic-meter{
+    width: 220px; height: 10px;
+    background: #f0dde0;
+    border-radius: 6px;
+    overflow:hidden;
+    margin-top: 26px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .mic-meter-fill{
+    height:100%; width:0%;
+    background: linear-gradient(90deg, #ffce4a, #ff5f6d);
+    transition: width 0.08s linear;
+  }
+
+  .mic-label{
+    margin-top:10px;
+    font-size:13px;
+    color:#8a4a52;
+    text-align:center;
+  }
+
+  .fallback-btn{
+    margin-top:16px;
+  }
+
+  /* ---------- CELEBRATION ---------- */
+  #scene-yay{
+    text-align:center;
+  }
+  #scene-yay h1{
+    font-family:'Great Vibes', cursive;
+    font-size: 56px;
+    color: var(--red-dark);
+    margin:0;
+  }
+  #scene-yay p{
+    font-family:'Dancing Script', cursive;
+    font-size: 22px;
+    color:#5a2a2f;
+    margin-top:8px;
+  }
+
+  .confetti{
+    position:absolute;
+    top:-20px;
+    width:10px; height:16px;
+    opacity:0.9;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(110vh) rotate(540deg); opacity:0.9; }
+  }
+
+  .torn-corner{
+    position:absolute;
+    width:140px; height:140px;
+    background: var(--cream);
+    opacity:0.6;
+    clip-path: polygon(0 0, 100% 0, 70% 40%, 100% 60%, 60% 55%, 80% 100%, 0 100%);
+  }
+  .torn-corner.tl{ top:0; left:0; }
+  .torn-corner.br{ bottom:0; right:0; transform: rotate(180deg); background:#f6d9c9; opacity:0.5;}
+
+  @media (max-width:480px){
+    .envelope-wrap{ width: 90vw; max-width:320px; }
+    .letter-paper{ padding: 28px 20px; }
+    .letter-paper h1{ font-size:32px; }
+    .letter-paper p{ font-size:17px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="dots"></div>
+  <div class="torn-corner tl"></div>
+  <div class="torn-corner br"></div>
+
+  <!-- SCENE 1: ENVELOPE -->
+  <div class="scene active" id="scene-envelope">
+    <div class="hint">tap the heart to open your letter 💌</div>
+    <div class="envelope-wrap" id="envelopeWrap">
+      <div class="envelope-body">
+        <div class="crease"></div>
+      </div>
+      <div class="letter-inner" id="letterPeek">
+        <span>your letter...</span>
+      </div>
+      <div class="flap"></div>
+      <div class="heart-clasp" id="heartClasp">
+        <svg viewBox="0 0 100 90">
+          <path d="M50 85 C 10 55, -10 20, 20 6 C 38 -3, 50 12, 50 20 C 50 12, 62 -3, 80 6 C 110 20, 90 55, 50 85 Z"
+                fill="#e14a52" stroke="#7d0b12" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 2: LETTER -->
+  <div class="scene" id="scene-letter">
+    <div class="letter-paper">
+      <h1>Happy Birthday my darling</h1>
+      <p id="letterText"></p>
+      <button class="btn" id="toCakeBtn">Now blow your candles 🎂</button>
+    </div>
+  </div>
+
+  <!-- SCENE 3: CAKE -->
+  <div class="scene" id="scene-cake">
+    <div class="cake-scene-inner">
+      <h1>Blow the candles!</h1>
+      <div class="sub" id="cakeSub">tap "enable mic" and blow into your phone or laptop 🎤</div>
+
+      <div class="cake-wrap" id="cakeWrap">
+        <div class="candle" id="candle0" style="left:36%;">
+          <div class="flame-wrap"><div class="flame"></div><div class="smoke"></div></div>
+          <div class="stick"></div>
+        </div>
+        <div class="candle" id="candle1" style="left:50%;">
+          <div class="flame-wrap"><div class="flame"></div><div class="smoke"></div></div>
+          <div class="stick"></div>
+        </div>
+        <div class="candle" id="candle2" style="left:64%;">
+          <div class="flame-wrap"><div class="flame"></div><div class="smoke"></div></div>
+          <div class="stick"></div>
+        </div>
+
+        <svg class="cake-svg" viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg">
+          <!-- bottom tier -->
+          <rect x="30" y="120" width="240" height="70" rx="8" fill="#b06a3a"/>
+          <path d="M30 120 Q150 145 270 120 L270 132 Q150 157 30 132 Z" fill="#c98a52"/>
+          <path d="M28 150 Q150 172 272 150" stroke="#8a5228" stroke-width="4" fill="none" opacity="0.4"/>
+          <!-- frosting drips bottom tier -->
+          <path d="M30 120 Q45 108 60 120 Q75 108 90 120 Q105 108 120 120 Q135 108 150 120 Q165 108 180 120 Q195 108 210 120 Q225 108 240 120 Q255 108 270 120 L270 132 L30 132 Z" fill="#d9a7d9"/>
+          <!-- top tier -->
+          <rect x="70" y="60" width="160" height="65" rx="8" fill="#b06a3a"/>
+          <path d="M70 60 Q150 85 230 60 L230 72 Q150 97 70 72 Z" fill="#c98a52"/>
+          <path d="M68 90 Q150 110 232 90" stroke="#8a5228" stroke-width="3" fill="none" opacity="0.4"/>
+          <path d="M70 60 Q83 48 96 60 Q109 48 122 60 Q135 48 148 60 Q161 48 174 60 Q187 48 200 60 Q213 48 226 60 L226 72 L70 72 Z" fill="#d9a7d9"/>
+          <!-- swirl dollops -->
+          <circle cx="60" cy="118" r="9" fill="#f2e6d8"/>
+          <circle cx="150" cy="122" r="9" fill="#f2e6d8"/>
+          <circle cx="240" cy="118" r="9" fill="#f2e6d8"/>
+          <circle cx="100" cy="58" r="8" fill="#f2e6d8"/>
+          <circle cx="150" cy="62" r="8" fill="#f2e6d8"/>
+          <circle cx="200" cy="58" r="8" fill="#f2e6d8"/>
+        </svg>
+      </div>
+
+      <div class="mic-meter"><div class="mic-meter-fill" id="micFill"></div></div>
+      <div class="mic-label" id="micLabel">microphone not enabled yet</div>
+
+      <button class="btn" id="micBtn">🎤 Enable mic</button>
+      <button class="btn fallback-btn" id="fallbackBtn" style="display:none; background:linear-gradient(135deg,#c98a52,#8a5228);">
+        no mic? tap to blow instead
+      </button>
+    </div>
+  </div>
+
+  <!-- SCENE 4: CELEBRATION -->
+  <div class="scene" id="scene-yay">
+    <h1>Happy Birthday! 🎉</h1>
+    <p>wish made. now go eat cake 🍰</p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const letterMessage = "Happy birthdayyy my babyyy \u{1F970}. It is already your birthday again? WOAHHH. How do you feel? Honestly, I wanted to make your birthday feel special even when we are so far, so I made you both physical and online gifts so that you can keep them forever. I want you to know that I really love you and you make me really happy. I hope that I always make you feel safe and loved in this relationship because you truly deserve it, my darling. Have the bestest day today. I LOVE YOU THE MOSTEST. Happy birthday once again to the most beautiful woman I know.";
+  document.getElementById('letterText').textContent = letterMessage;
+
+  const envelopeWrap = document.getElementById('envelopeWrap');
+  const heartClasp = document.getElementById('heartClasp');
+  const letterPeek = document.getElementById('letterPeek');
+
+  function showScene(id){
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function openEnvelope(){
+    envelopeWrap.classList.add('open');
+  }
+  heartClasp.addEventListener('click', openEnvelope);
+
+  letterPeek.addEventListener('click', () => {
+    if(envelopeWrap.classList.contains('open')){
+      showScene('scene-letter');
+    } else {
+      openEnvelope();
+    }
+  });
+
+  document.getElementById('toCakeBtn').addEventListener('click', () => {
+    showScene('scene-cake');
+  });
+
+  // ---------------- CAKE / MIC LOGIC ----------------
+  const candles = [document.getElementById('candle0'), document.getElementById('candle1'), document.getElementById('candle2')];
+  let litCount = candles.length;
+  const micFill = document.getElementById('micFill');
+  const micLabel = document.getElementById('micLabel');
+  const micBtn = document.getElementById('micBtn');
+  const fallbackBtn = document.getElementById('fallbackBtn');
+  const cakeSub = document.getElementById('cakeSub');
+
+  let blowEnergy = 0; // accumulates while blowing hard
+  const BLOW_THRESHOLD = 42; // tune this
+  const ENERGY_TO_EXTINGUISH = 14; // consecutive frames-ish needed
+
+  function extinguishOne(){
+    if(litCount <= 0) return;
+    litCount -= 1;
+    const idx = litCount; // extinguish from last to first
+    candles[idx].classList.add('out');
+    if(litCount === 0){
+      setTimeout(() => {
+        showScene('scene-yay');
+        launchConfetti();
+      }, 700);
+    }
+  }
+
+  function handleLevel(level){
+    // level roughly 0-100
+    const pct = Math.min(100, Math.round(level * 1.4));
+    micFill.style.width = pct + '%';
+
+    if(level > BLOW_THRESHOLD){
+      blowEnergy += 1;
+      micLabel.textContent = 'keep blowing... 💨';
+    } else {
+      blowEnergy = Math.max(0, blowEnergy - 1);
+      if(litCount > 0) micLabel.textContent = 'blow into the mic now 🎤';
+    }
+    if(blowEnergy >= ENERGY_TO_EXTINGUISH){
+      blowEnergy = 0;
+      extinguishOne();
+    }
+  }
+
+  let audioCtx, analyser, dataArray, rafId;
+
+  function startMic(){
+    micBtn.disabled = true;
+    micBtn.textContent = 'listening...';
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(stream => {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.4;
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        micBtn.style.display = 'none';
+        cakeSub.textContent = 'blow steadily into the mic to put out the candles!';
+        micLabel.textContent = 'listening for your blow...';
+
+        function loop(){
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for(let i=0;i<dataArray.length;i++) sum += dataArray[i];
+          const avg = sum / dataArray.length;
+          handleLevel(avg);
+          rafId = requestAnimationFrame(loop);
+        }
+        loop();
+      })
+      .catch(err => {
+        micBtn.style.display = 'none';
+        micLabel.textContent = "couldn't access the mic — use the button below instead";
+        fallbackBtn.style.display = 'inline-block';
+      });
+  }
+
+  micBtn.addEventListener('click', startMic);
+
+  fallbackBtn.addEventListener('click', () => {
+    extinguishOne();
+  });
+
+  // also allow tapping the cake itself as a manual fallback at any time
+  document.getElementById('cakeWrap').addEventListener('click', () => {
+    if(fallbackBtn.style.display === 'inline-block'){
+      extinguishOne();
+    }
+  });
+
+  function launchConfetti(){
+    const colors = ['#e14a52','#ffce4a','#d9a7d9','#f6d9c9','#a30f17'];
+    for(let i=0;i<60;i++){
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      el.style.left = Math.random()*100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random()*colors.length)];
+      el.style.animationDuration = (2 + Math.random()*2) + 's';
+      el.style.animationDelay = (Math.random()*0.6) + 's';
+      el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      document.getElementById('app').appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+  }
+})();
+</script>
+
+</body>
+</html>
